@@ -36,10 +36,20 @@ Let's bring back the collaboration of modding. No paywalls, no secrets, no malwa
 > "You wouldn’t steal a method."<br>
 > [🎥 *(Or would you?)*](https://www.youtube.com/watch?v=zMBqPdMzZ9E)
 
-FAQ
-# Is There Console?
+
+
+</details>
+<details>
+  <summary><b>Is There Console?</b></summary>
+	
+**No,**  
 No, there is no console for this menu unlike to original "IIStupid Menu" that had it where devs could manipulate you're game in tons of ways such as banning you by flagging anti cheat, crash, kick, lag, edit your games code, and much much more. This is the remade safe version of the menu.
-# What is this? 
-Due to drama around the original IIStupid Menu by IIDK, where he turned out weird and the menu was unsafe with a console that could crash, ban, kick, lag, edit in-game code and more, we created Stupid Menu Reborn. With permission to reuse the code, we rebuilt it safer, removed the console, fixed data leaks, and formed a new dev team behind it.
+
+</details>
+
+</details>
+<details>
+  <summary><b>What is this?</b></summary>
+	Due to drama around the original IIStupid Menu by IIDK, where he turned out weird and the menu was unsafe with a console that could crash, ban, kick, lag, edit in-game code and more, we created Stupid Menu Reborn. With permission to reuse the code, we rebuilt it safer, removed the console, fixed data leaks, and formed a new dev team behind it.
 
 </details>
