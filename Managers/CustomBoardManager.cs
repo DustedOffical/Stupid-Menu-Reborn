@@ -21,6 +21,7 @@
 
 using GorillaNetworking;
 using iiMenu.Extensions;
+using iiMenu.Menu;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -170,11 +171,11 @@ namespace iiMenu.Managers
         public const int StumpLeaderboardIndex = 3;
         public const int ForestLeaderboardIndex = 2;
 
-        public static string motdTemplate = "You are using build {0}. This menu was revamped by @authenticationservice " +
-        "This menu is completely free and open sourced " +
+        public static string motdTemplate = "You are using build {0} of the menu. This menu was originally created by iiDk." +
+        "This menu is completely free and open sourced, if you paid for this menu you have been scammed. " +
         "There are a total of <b>{1}</b> mods on this menu. " +
-        "<color=red>I, Lain, am not responsible for any bans using this menu.</color> " +
-        "If you get banned while using this, it's your responsibility.\n\nCurrent menu status: <b>Loading...</b>\nMade with <3 by Lain, Dusted, and others\n\n<alpha=128>{2} {0} {3}<alpha=255>";
+        "<color=red>I, zyber, am not responsible for any bans using this menu.</color> " +
+        "If you get banned while using this, it's your responsibility.";
 
         public Material forestMaterial;
         public Material stumpMaterial;
@@ -317,7 +318,7 @@ namespace iiMenu.Managers
 
                 motdHeadingText.richText = true;
                 motdHeadingText.SafeSetFontSize(100);
-                motdHeadingText.SafeSetText($"Thanks for using {(doCustomName ? customMenuName : "ii's <b>Stupid</b> Menu")}!");
+                motdHeadingText.SafeSetText($"Thanks for using {(doCustomName ? customMenuName : "Stupid Menu <b>Reborn</b>")}!");
                 motdHeadingText.SafeSetFontStyle(activeFontStyle);
                 motdHeadingText.SafeSetFont(activeFont);
                 FollowMenuSettings(motdHeadingText, -4f);

@@ -21,7 +21,9 @@
 
 using HarmonyLib;
 using iiMenu.Managers;
+using iiMenu.Patches.Safety;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -29,16 +31,24 @@ namespace iiMenu.Patches
 {
     public class PatchHandler
     {
-        public static bool IsPatched { get; private set; }
-        public static int PatchErrors { get; private set; }
+        public static bool IsPatched { get; internal set; }
+        public static int PatchErrors { get; internal set; }
 
-        public static void PatchAll()
+        public static bool CriticalPatchFailed { get; internal set; }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+        public class SecurityPatch : Attribute { }
+
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+        public class PatchOnAwake : Attribute { }
+
+        public static void PatchAll(bool awake = false)
         {
             if (IsPatched) return;
             instance ??= new Harmony(PluginInfo.GUID);
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes()
-                         .Where(t => t.IsClass && t.GetCustomAttribute<HarmonyPatch>() != null))
+                         .Where(t => t.IsClass && t.GetCustomAttribute<HarmonyPatch>() != null && t.GetCustomAttribute<PatchOnAwake>() != null == awake))
             {
                 try
                 {
@@ -47,13 +57,16 @@ namespace iiMenu.Patches
                 catch (Exception ex)
                 {
                     PatchErrors++;
+                    if (type.GetCustomAttribute<SecurityPatch>() != null)
+                        CriticalPatchFailed = true;
+                    CriticalPatchFailed = true;
                     LogManager.LogError($"Failed to patch {type.FullName}: {ex}");
                 }
             }
 
             LogManager.Log($"Patched with {PatchErrors} errors");
 
-            IsPatched = true;
+            IsPatched = !awake;
         }
 
         public static void UnpatchAll()

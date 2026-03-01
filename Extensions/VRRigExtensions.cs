@@ -54,12 +54,26 @@ namespace iiMenu.Extensions
 
         public static string GetPlatform(this VRRig rig)
         {
+            int suspiciouslySteam = 0;
+            int suspiciouslyPC = 0;
+            int suspiciouslyQuest = 0;
             string concatStringOfCosmeticsAllowed = rig.rawCosmeticString;
 
             if (concatStringOfCosmeticsAllowed.Contains("S. FIRST LOGIN"))
-                return "Steam";
-            else if (concatStringOfCosmeticsAllowed.Contains("FIRST LOGIN") || rig.Creator.GetPlayerRef().CustomProperties.Count >= 2)
-                return "PC";
+                suspiciouslySteam++;
+
+            if (concatStringOfCosmeticsAllowed.Contains("FIRST LOGIN") || rig.GetPhotonPlayer().CustomProperties.Count >= 2)
+                suspiciouslyPC++;
+
+            if (rig.currentRankedSubTierPC > 0)
+                suspiciouslySteam++;
+            else if (rig.currentRankedSubTierQuest > 0)
+                suspiciouslyQuest++;
+
+
+            if (suspiciouslySteam > suspiciouslyPC && suspiciouslySteam > suspiciouslyQuest) return "Steam";
+            if (suspiciouslyPC > suspiciouslySteam && suspiciouslyPC > suspiciouslyQuest) return "PC";
+            if (suspiciouslyQuest > suspiciouslySteam && suspiciouslyQuest > suspiciouslyPC) return "Standalone";
 
             return "Standalone";
         }

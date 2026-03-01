@@ -31,7 +31,7 @@ namespace iiMenu.Patches.Menu
         public static bool Prefix(VRRig __instance, float red, float green, float blue, PhotonMessageInfoWrapped info)
         {
             NetPlayer player = RigUtilities.GetPlayerFromVRRig(__instance) ?? null;
-            if (player != null)
+            if (player != null && Main.ShouldBypassChecks(player))
             {
                 if (info.senderID == NetworkSystem.Instance.GetOwningPlayerID(__instance.rigSerializer.gameObject))
                     __instance.InitializeNoobMaterialLocal(red, green, blue);

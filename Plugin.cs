@@ -24,14 +24,16 @@ using BepInEx.Logging;
 using iiMenu.Classes.Menu;
 using iiMenu.Managers;
 using iiMenu.Menu;
+using iiMenu.Mods;
 using iiMenu.Patches;
 using iiMenu.Patches.Menu;
+using PlayFab.ClientModels;
 using System.ComponentModel;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using Console = System.Console;
-
 namespace iiMenu
 {
     [Description(PluginInfo.Description)]
@@ -45,7 +47,7 @@ namespace iiMenu
         private void Awake()
         {
             // Set console title
-            Console.Title = $"Stupid Menu Reborn // Build {PluginInfo.Version}";
+            Console.Title = $"ii's Stupid Menu // Build {PluginInfo.Version}";
             instance = this;
 
             string logoLines = PluginInfo.Logo.Split(@"
@@ -87,14 +89,17 @@ namespace iiMenu
                     Directory.CreateDirectory(DirectoryTarget);
             }
 
+            PatchHandler.PatchAll(true);
+
             // Ugily hard-coded but works so well
-            if (File.Exists($"{PluginInfo.BaseDirectory}/stupidMenu_Preferences.txt"))
+            if (File.Exists($"{PluginInfo.BaseDirectory}/iiMenu_Preferences.txt"))
             {
-                if (File.ReadAllLines($"{PluginInfo.BaseDirectory}/stupidMenu_Preferences.txt")[0].Split(";;").Contains("Accept TOS"))
+                if (File.ReadAllLines($"{PluginInfo.BaseDirectory}/iiMenu_Preferences.txt")[0].Split(";;").Contains("Accept TOS"))
                     TOSPatches.enabled = true;
             }
 
-            if (File.Exists($"{PluginInfo.BaseDirectory}/stupidMenu_DisableTelemetry.txt"))
+            if (File.Exists($"{PluginInfo.BaseDirectory}/iiMenu_DisableTelemetry.txt"))
+                ServerData.DisableTelemetry = true;
             
             GorillaTagger.OnPlayerSpawned(LoadMenu);
         }

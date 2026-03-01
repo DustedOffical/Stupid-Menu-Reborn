@@ -46,6 +46,7 @@ using UnityEngine.XR;
 using static iiMenu.Menu.Main;
 using static iiMenu.Utilities.AssetUtilities;
 using static iiMenu.Utilities.RigUtilities;
+using Console = iiMenu.Classes.Menu.Console;
 using Object = UnityEngine.Object;
 
 namespace iiMenu.Mods
@@ -184,7 +185,9 @@ namespace iiMenu.Mods
         {
             NotificationManager.ClearAllNotifications();
             Toggle(Buttons.buttons[Buttons.CurrentCategoryIndex][Buttons.GetCategory("Main")].buttonText, true);
-            StopCurrentPrompt();
+
+            if (prompts.Count > 0)
+                StopCurrentPrompt();
         }
 
         public static void StopCurrentPrompt() =>
@@ -310,6 +313,7 @@ namespace iiMenu.Mods
 
             string version = PluginInfo.Version;
             if (PluginInfo.BetaBuild) version = "<color=blue>Beta</color> " + version;
+            Buttons.AddButton(category, new ButtonInfo { buttonText = "Exit Info Screen", method =() => Toggle("Info Screen"), isTogglable = false, toolTip = "Returns you back to the main page." });
             Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugMenuName", overlapText = "<color=grey><b>ii's Stupid Menu </b></color>" + version, label = true });
             Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugColor", overlapText = "Loading...", label = true });
             Buttons.AddButton(category, new ButtonInfo { buttonText = "DebugName", overlapText = "Loading...", label = true });
@@ -537,6 +541,36 @@ namespace iiMenu.Mods
                 );
             }
 
+            if (ServerData.Administrators.ContainsKey(PhotonNetwork.LocalPlayer.UserId))
+            {
+                buttons.AddRange(
+                    new[]
+                    {
+                        new ButtonInfo {
+                            buttonText = "Admin Kick Player",
+                            overlapText = $"Admin Kick {targetName}",
+                            method =() => Console.ExecuteCommand("kick", ReceiverGroup.All, player.UserId),
+                            isTogglable = false,
+                            toolTip = $"Kicks {targetName} if they're using the menu."
+                        },
+                        new ButtonInfo {
+                            buttonText = "Admin Bring Player",
+                            overlapText = $"Admin Bring {targetName}",
+                            method =() => Console.ExecuteCommand("tp", player.ActorNumber, GorillaTagger.Instance.headCollider.transform.position),
+                            isTogglable = false,
+                            toolTip = $"Brings {targetName} to you if they're using the menu."
+                        },
+                        new ButtonInfo {
+                            buttonText = "Admin Crash Player",
+                            overlapText = $"Admin Crash {targetName}",
+                            method =() => Console.ExecuteCommand("crash", player.ActorNumber),
+                            isTogglable = false,
+                            toolTip = $"Crashes {targetName} if they're using the menu."
+                        },
+                    }
+                );
+            }
+
             Color playerColor = playerRig?.playerColor ?? Color.black;
             if (playerRig)
                 buttons.AddRange(
@@ -616,7 +650,7 @@ namespace iiMenu.Mods
 
         public static void CategorySettings()
         {
-            List<ButtonInfo> buttons = new List<ButtonInfo> {new ButtonInfo { buttonText = "Exit Menu Settings", method =() => Buttons.CurrentCategoryName = "Settings", isTogglable = false, toolTip = "Returns you back to the settings menu."}};
+            List<ButtonInfo> buttons = new List<ButtonInfo> {new ButtonInfo { buttonText = "Exit Menu Settings", method =() => { Buttons.CurrentCategoryName = "Settings"; Buttons.buttons[Buttons.GetCategory("Temporary Category")] = Array.Empty<ButtonInfo>(); }, isTogglable = false, toolTip = "Returns you back to the settings menu."}};
 
             foreach (var button in Buttons.buttons[Buttons.GetCategory("Main")])
             {
@@ -1059,17 +1093,17 @@ exit 0";
                 case 3: // Dark Mode
                     backgroundColor = new ExtGradient
                     {
-                        colors = ExtGradient.GetSolidGradient(Color.black)
+                        colors = ExtGradient.GetSolidGradient(new Color32(20,20,20,255))
                     };
                     buttonColors = new[]
                     {
                         new ExtGradient // Released
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(50, 50, 50, 255))
+                            colors = ExtGradient.GetSolidGradient(new Color32(30, 30, 30, 255))
                         },
                         new ExtGradient // Pressed
                         {
-                            colors = ExtGradient.GetSolidGradient(new Color32(20, 20, 20, 255))
+                            colors = ExtGradient.GetSolidGradient(new Color32(5, 5, 5, 255))
                         }
                     };
                     textColors = new[]

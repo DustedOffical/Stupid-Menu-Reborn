@@ -291,46 +291,89 @@ namespace iiMenu.Managers
         /// decay time.</param>
         public static void SendNotification(string notificationText, int clearTime = -1)
         {
-            if (notificationText == null) return;
-            if (NotificationManager.Instance == null || NotificationManager.notificationText == null || CoroutineManager.instance == null)
-            {
-                PendingNotifications.Enqueue((notificationText, clearTime));
-                return;
-            }
+            if (clearTime < 0)
+                clearTime = notificationDecayTime;
 
+            if (disableNotifications && !Buttons.GetIndex("Conduct Notifications").enabled) return;
             try
             {
-                if (clearTime < 0)
-                    clearTime = notificationDecayTime;
+                if (translate)
+                {
+                    if (TranslationManager.translateCache.ContainsKey(notificationText))
+                        notificationText = TranslationManager.TranslateText(notificationText);
+                    else
+                    {
+                        TranslationManager.TranslateText(notificationText, delegate { SendNotification(notificationText, clearTime); });
+                        return;
+                    }
+                }
 
-                if (disableNotifications && !Buttons.GetIndex("Conduct Notifications").enabled) return;
+                if (notificationSoundIndex != 0 && (!soundOnError || notificationText.Contains("<color=red>ERROR</color>")) && Time.time > timeMenuStarted + 5f)
+                    PlayNotificationSound();
+
+                if (inputTextColor != "green")
+                    notificationText = notificationText.Replace("<color=green>", "<color=" + inputTextColor + ">");
 
                 notificationText = FixTMProTags(notificationText);
-                if (noRichText)
-                    notificationText = NoRichtextTags(notificationText);
 
-                string currentText = NotificationManager.notificationText.text;
-                if (!string.IsNullOrEmpty(currentText))
-                    NotificationManager.notificationText.SafeSetText(currentText + "\n" + notificationText);
+                if (hideBrackets)
+                    notificationText = notificationText.Replace("[", "").Replace("]", "");
+
+                notificationText = notificationText.TrimEnd('\n', '\r');
+
+                if (PreviousNotifi == notificationText && stackNotifications)
+                {
+                    NotifiCounter++;
+
+                    string[] lines = NotificationManager.notificationText.text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (lines.Length > 0)
+                    {
+                        string lastLine = lines[^1];
+                        int counterIndex = lastLine.IndexOf(" <color=grey>(x", StringComparison.Ordinal);
+                        if (counterIndex > 0)
+                            lastLine = lastLine[..counterIndex];
+
+                        lines[^1] = $"{lastLine} <color=grey>(x{NotifiCounter + 1})</color>";
+                        NotificationManager.notificationText.SafeSetText(string.Join(Environment.NewLine, lines));
+                    }
+
+                    if (clearCoroutines.Count > 0)
+                        CancelClear(clearCoroutines[0]);
+                }
                 else
-                    NotificationManager.notificationText.SafeSetText(notificationText);
-                    // revamped here to safe clear.
-                    CoroutineManager.instance.StartCoroutine(TrackCoroutine(ClearHolder(clearTime / 1000f)));
-            }
-            catch
-            {
-                // memory leak fixed
-            }
-        }
+                {
+                    NotifiCounter = 0;
+                    PreviousNotifi = notificationText;
 
-        private static readonly Queue<(string text, int time)> PendingNotifications = new Queue<(string, int)>();
-        public void Update()
-        {
-            // Show queued notifications when ready
-            while (PendingNotifications.Count > 0 && notificationText != null && CoroutineManager.instance != null)
+                    if (!string.IsNullOrEmpty(NotificationManager.notificationText.text))
+                    {
+                        string currentText = NotificationManager.notificationText.text.TrimEnd('\n', '\r');
+                        NotificationManager.notificationText.SafeSetText(currentText + Environment.NewLine + notificationText);
+                    }
+                    else
+                        NotificationManager.notificationText.SafeSetText(notificationText);
+                }
+
+                CoroutineManager.instance.StartCoroutine(TrackCoroutine(ClearHolder(clearTime / 1000f)));
+
+                if (noRichText)
+                    NotificationManager.notificationText.SafeSetText(NoRichtextTags(NotificationManager.notificationText.text));
+
+                if (lowercaseMode)
+                    NotificationManager.notificationText.SafeSetText(NotificationManager.notificationText.text.ToLower());
+
+                if (uppercaseMode)
+                    NotificationManager.notificationText.SafeSetText(NotificationManager.notificationText.text.ToUpper());
+
+                NotificationManager.notificationText.richText = !noRichText;
+
+                if (narrateNotifications)
+                    NarrateText(NoRichtextTags(noPrefix ? RemovePrefix(notificationText) : notificationText));
+            }
+            catch (Exception e)
             {
-                var notif = PendingNotifications.Dequeue();
-                SendNotification(notif.text, notif.time);   
+                LogManager.LogError($"Notification failed, object probably nil due to third person ; {notificationText} {e.Message}");
             }
         }
 
@@ -352,7 +395,7 @@ namespace iiMenu.Managers
 
             clearCoroutines.Clear();
         }
-
+       
         /// <summary>
         /// Removes a specified number of past notification entries from the notification text.
         /// </summary>

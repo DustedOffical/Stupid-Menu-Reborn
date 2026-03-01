@@ -80,7 +80,7 @@ namespace iiMenu.Mods
             yield return new WaitUntil(() => instance.netState == NetSystemState.Idle);
             yield return new WaitForSeconds(0.5f);
 
-            instance.netState = NetSystemState.Connecting;
+            // instance.netState = NetSystemState.Connecting;
 
             while (!instance.InRoom)
             {
@@ -639,7 +639,7 @@ exit";
             mediaText = null;
         }
 
-#pragma warning disable CS0618 // Type or member is obsolete
+        #pragma warning disable CS0618 // Type or member is obsolete
         private static bool wasenabled = true;
 
         public static void EnableFPC()
@@ -683,7 +683,7 @@ exit";
                 TPC.gameObject.transform.Find("CM vcam1").GetComponent<CinemachineVirtualCamera>().enabled = wasenabled;
             }
         }
-#pragma warning restore CS0618 // Type or member is obsolete
+        #pragma warning restore CS0618 // Type or member is obsolete
 
         public static void ForceEnableHands()
         {
@@ -695,6 +695,11 @@ exit";
 
             ConnectedControllerHandler.Instance.leftValid = true;
             ConnectedControllerHandler.Instance.rightValid = true;
+
+            ConnectedControllerHandler.Instance.rightXRController.enabled = true;
+            ConnectedControllerHandler.Instance.leftXRController.enabled = true;
+
+            ConnectedControllerHandler.Instance.UpdateControllerStates();
         }
 
         private static bool reportMenuToggle;
@@ -1000,7 +1005,7 @@ exit";
             {
                 string text = RandomString();
                 if (GorillaComputer.instance.CheckAutoBanListForName(text))
-                    return SubscriptionPatches.enabled && text.Length == 4 ? $"@{text}" : text;
+                    return text;
             }
         }
     }

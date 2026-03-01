@@ -25,6 +25,7 @@ using GorillaExtensions;
 using GorillaLocomotion;
 using GorillaLocomotion.Climbing;
 using GorillaLocomotion.Swimming;
+using HarmonyLib;
 using iiMenu.Classes.Menu;
 using iiMenu.Classes.Mods;
 using iiMenu.Extensions;
@@ -200,6 +201,8 @@ namespace iiMenu.Mods
 
             if (Buttons.GetIndex("Non-Sticky Platforms").enabled)
                 platform.transform.position += right * ((left ? 1f : -1f) * ((0.025f + platform.transform.localScale.x / 2f) * (scaleWithPlayer ? GTPlayer.Instance.scale : 1f)));
+
+            FriendManager.PlatformSpawned(true, platform.transform.position, platform.transform.rotation, platform.transform.localScale, GetPlatformPrimitiveType());
         }
 
         public static int flySpeedCycle = 1;
@@ -253,6 +256,8 @@ namespace iiMenu.Mods
                             rightplat = null;
                         if (platformMode == 4 && rightplat == null)
                             UpdateClipColliders(true);
+
+                        FriendManager.PlatformDespawned(true);
                         break;
                     }
             }
@@ -2447,7 +2452,6 @@ namespace iiMenu.Mods
                 "VSTUMP"
             },
         };
-
         public static void EnterTeleportToMap() // Credits to Malachi for the positions
         {
             rememberPageNumber = pageNumber;
@@ -3908,60 +3912,140 @@ namespace iiMenu.Mods
 
             RigColliders.Clear();
         }
+       // if anyone is reading this which is unrealistic i added some comments like iidk does all the time so you can actually read my horrible code. Very nice, am i right? 🤓☝️
+        
+        // slot thingys
+        public static int pullPowerInt = 0;
+        public static int pullSmoothInt = 2;
+        public static int pullThresholdInt = 1;
 
-        public static int pullPowerInt;
+        //actual values 
+        private static float pullPower = 0.05f;
+        private static float pullSmoothTime = 0.18f; 
+        private static float pullThreshold = 2.0f;
+
+        private static readonly Dictionary<bool, bool> PTG = new Dictionary<bool, bool>();
+        private static readonly Dictionary<bool, float> pullTimeThatHasHappened = new Dictionary<bool, float>();
+        private static readonly Dictionary<bool, float> lerpDuration = new Dictionary<bool, float>();
+        private static readonly Dictionary<bool, Vector3> SlideVector = new Dictionary<bool, Vector3>();
+        private static readonly Dictionary<bool, Vector3> offsetThing = new Dictionary<bool, Vector3>();
+
         public static void ChangePullModPower(bool positive = true)
         {
-            float[] powers = {
-                0.05f,
-                0.1f,
-                0.2f,
-                0.4f
-            };
-            string[] powerNames = {
-                "Normal",
-                "Medium",
-                "Strong",
-                "Powerful"
-            };
+            float[] powers = {0.05f, 0.1f, 0.15f, 0.3f, 0.5f, 0.7f };
+            string[] names = { "'legit'", "light","Normal", "Medium", "Strong", "Powerful" };
 
-            if (positive)
-                pullPowerInt++;
-            else
-                pullPowerInt--;
-
-            pullPowerInt %= powerNames.Length;
-            if (pullPowerInt < 0)
-                pullPowerInt = powerNames.Length - 1;
+            if (positive) pullPowerInt++; else pullPowerInt--;
+            if (pullPowerInt < 0) pullPowerInt = names.Length - 1;
+            pullPowerInt %= names.Length;
 
             pullPower = powers[pullPowerInt];
-            Buttons.GetIndex("Change Pull Mod Power").overlapText = "Change Pull Mod Power <color=grey>[</color><color=green>" + powerNames[pullPowerInt] + "</color><color=grey>]</color>";
+            GetButton("Change Pull Mod Power").overlapText = $"Change Pull Mod Power <color=grey>[</color><color=green>{names[pullPowerInt]}</color><color=grey>]</color>";
         }
 
-        private static float pullPower = 0.05f;
-        private static readonly Dictionary<bool, bool> previousTouchingGround = new Dictionary<bool, bool>();
-        public static void ProcessPullHand(bool left)
+        public static void ChangePullModSmoothness(bool positive = true)
         {
-            if ((left ? !leftGrab : !rightGrab))
-                return;
+            float[] smoothValues = { 0f, 0.12f, 0.18f, 0.25f, 0.45f };
+            string[] names = { "Instant", "Snappy", "Normal","Smooth", "Smooooooth" };
 
-            bool touchingGround = GTPlayer.Instance.IsHandTouching(left);
-            previousTouchingGround.TryGetValue(left, out bool wasTouchingGround);
-            
-            if (!touchingGround && wasTouchingGround)
+            if (positive) pullSmoothInt++; else pullSmoothInt--;
+            if (pullSmoothInt < 0) pullSmoothInt = names.Length - 1;
+            pullSmoothInt %= names.Length;
+
+            pullSmoothTime = smoothValues[pullSmoothInt];
+            GetButton("Change Pull Mod Smoothness").overlapText = $"Change Pull Mod Smoothness <color=grey>[</color><color=green>{names[pullSmoothInt]}</color><color=grey>]</color>";
+        }
+
+        public static void ChangePullModThreshold(bool positive = true)
+        {
+            float[] thresholdValues = { 0f, 2.0f, 4.0f, 6.5f };
+            string[] names = { "None", "Low", "Medium", "High" };
+
+            if (positive) pullThresholdInt++; else pullThresholdInt--;
+            if (pullThresholdInt < 0) pullThresholdInt = names.Length - 1;
+            pullThresholdInt %= names.Length;
+
+            pullThreshold = thresholdValues[pullThresholdInt];
+            GetButton("Change Pull Mod Threshold").overlapText = $"Change Pull Mod Threshold <color=grey>[</color><color=green>{names[pullThresholdInt]}</color><color=grey>]</color>";
+        }
+
+        private static ButtonInfo GetButton(string text) => Buttons.GetIndex(text);
+
+        private static float Easingg(float t)
+        {
+            return 1f - Mathf.Pow(1f - t, 3);
+        }
+
+        public static void Pulll(bool left)
+        {
+            if ((left ? !leftGrab : !rightGrab)) return;
+
+            bool TouchingGround = GTPlayer.Instance.IsHandTouching(left);
+            PTG.TryGetValue(left, out bool WasTouchingGround);
+
+            if (!TouchingGround && WasTouchingGround)
             {
-                Vector3 normal = GTPlayer.Instance.lastHitInfoHand.normal;
-                Vector3 direction = GorillaTagger.Instance.rigidbody.linearVelocity.X_Z();
-                GTPlayer.Instance.transform.position += (direction - normal * Vector3.Dot(direction, normal)).normalized * (direction.magnitude / GTPlayer.Instance.maxJumpSpeed * (pullPower * 5f)) * (scaleWithPlayer ? GTPlayer.Instance.scale : 1f);
+                // just  realized that i spelt it as liniarvel and not linearVel lol, not changing that tho
+                Vector3 liniarVel = GorillaTagger.Instance.rigidbody.linearVelocity;
+
+                if (liniarVel.magnitude >= pullThreshold)
+                {
+                    Vector3 normal = GTPlayer.Instance.lastHitInfoHand.normal;
+                    Vector3 moveDir = Vector3.ProjectOnPlane(liniarVel, normal).normalized;
+
+                    float slideDist = (liniarVel.magnitude / GTPlayer.Instance.maxJumpSpeed) * (pullPower * 12f);
+                    if (scaleWithPlayer) slideDist *= GTPlayer.Instance.scale;
+
+                    Vector3 targetFullMove = moveDir * slideDist;
+
+                    if (pullSmoothTime <= 0f)
+                    {
+                        GTPlayer.Instance.transform.position += targetFullMove;
+                    }
+                    else
+                    {
+                        SlideVector[left] = targetFullMove;
+                        offsetThing[left] = Vector3.zero;
+                        pullTimeThatHasHappened[left] = 0f;
+                        lerpDuration[left] = pullSmoothTime;
+                    }
+                }
             }
 
-            previousTouchingGround[left] = touchingGround;
+            if (pullTimeThatHasHappened.TryGetValue(left, out float elapsed) &&
+                lerpDuration.TryGetValue(left, out float duration))
+            {
+                elapsed += Time.deltaTime;
+                pullTimeThatHasHappened[left] = elapsed;
+
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = Easingg(t);
+
+                Vector3 pluh = SlideVector[left] * eased;
+
+                offsetThing.TryGetValue(left, out Vector3 lT);
+                Vector3 FrameDelta = pluh - lT;
+
+                GTPlayer.Instance.transform.position += FrameDelta;
+
+                offsetThing[left] = pluh;
+
+                if (t >= 1f)
+                {
+                    pullTimeThatHasHappened.Remove(left);
+                    lerpDuration.Remove(left);
+                    SlideVector.Remove(left);
+                    offsetThing.Remove(left);
+                }
+            }
+
+            PTG[left] = TouchingGround;
         }
 
         public static void PullMod()
         {
-            ProcessPullHand(false);
-            ProcessPullHand(true);
+            Pulll(false);//right
+            Pulll(true);  // left
         }
 
         public static GameObject leftThrow;
@@ -6057,3 +6141,54 @@ namespace iiMenu.Mods
         }
     }
 }
+
+
+
+    [BepInPlugin("com.zyber.pullfixinton", "pull fix", "0.6.7")] // i am actually so brainrotted just ignore these variable names 💔
+    public class Pullfix : BaseUnityPlugin
+    {
+        private static bool blocking;            
+        private static Playspace playspace67;
+        private static bool fortnite;
+
+        private void Awake()
+        {
+            blocking = false;
+        }
+
+        private static Playspace GetPlayspace()
+        {
+            if (playspace67 != null) return playspace67;
+            playspace67 = Object.FindObjectOfType<Playspace>(true);
+            return playspace67;
+        }
+
+        public static void Enable()
+        {
+            if (blocking) return;
+
+            var Playspace = GetPlayspace();
+            if (Playspace == null) return;
+
+            fortnite = Playspace.enabled;
+            Playspace.enabled = false;  
+            blocking = true;
+        }
+
+        public static void Disable()
+        {
+            if (!blocking) return;
+
+            var Playspace = GetPlayspace();
+            if (Playspace == null) return;
+
+            Playspace.enabled = fortnite; 
+            blocking = false;
+        }
+
+        public static void Toggle()
+        {
+            if (blocking) Disable();
+            else Enable();
+        }
+    }

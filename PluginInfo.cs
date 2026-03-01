@@ -23,21 +23,23 @@ namespace iiMenu
 {
     public class PluginInfo
     {
-        public const string GUID = "org.lain.gorillatag.stupidmenu";
+        public const string GUID = "org.iidk.gorillatag.iimenu";
         public const string Name = "Stupid Menu Reborn";
-        public const string Description = "Orginially by IIDk, Revamped by Lain";
-        public const string BuildTimestamp = "2026-02-24T22:33:32Z";
-        public const string Version = "8.3.0";
+        public const string Description = "Created by @crimsoncauldron with love <3";
+        public const string BuildTimestamp = "2026-02-28T21:15:11Z";
+        public const string Version = "1.0.3";
 
-        public const string BaseDirectory = "StupidMenuReborn";
-        public const string ClientResourcePath = "StupidMenu.Resources.Client";
+        public const string BaseDirectory = "stupidmenurebornn";
+        public const string ClientResourcePath = "iiMenu.Resources.Client";
         public const string ServerResourcePath = "https://raw.githubusercontent.com/iiDk-the-actual/iis.Stupid.Menu/master/Resources/Server";
-        public const string ServerAPI = "https://NOMORECONSOLEBLOCKEDTHISSOTUFFBOILMAO"; // Server now closed source due to bad actors :( For any questions, please make an issue on the GitHub repository.
+        public const string ServerAPI = "https://iidk.online"; // Server now closed source due to bad actors :( For any questions, please make an issue on the GitHub repository.
         
-        public const string Logo = @"••╹   ┏┓     • ┓  ┳┳┓      
-┓┓ ┏  ┗┓╋┓┏┏┓┓┏┫  ┃┃┃┏┓┏┓┓┏
-┗┗ ┛  ┗┛┗┗┻┣┛┗┗┻  ┛ ┗┗ ┛┗┗┻
-           ┛";
+        public const string Logo = @"
+      ┏┓     • ┓  ┳┳┓      
+      ┗┓╋┓┏┏┓┓┏┫  ┃┃┃┏┓┏┓┓┏
+      ┗┛┗┗┻┣┛┗┗┻  ┛ ┗┗ ┛┗┗┻
+           ┛⮡ Reborn, made by Dusted, Zyber and Acutebunny
+";
 
 #if DEBUG
         public static bool BetaBuild = true;

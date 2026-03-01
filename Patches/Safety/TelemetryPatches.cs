@@ -22,7 +22,10 @@
 using HarmonyLib;
 using JetBrains.Annotations;
 using Liv.Lck.Telemetry;
+using PlayFab;
 using PlayFab.EventsModels;
+using System.Collections.Generic;
+using static iiMenu.Patches.PatchHandler;
 
 namespace iiMenu.Patches.Safety
 {
@@ -31,38 +34,51 @@ namespace iiMenu.Patches.Safety
     {
         public static bool enabled = true;
 
+        [PatchOnAwake]
         [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.EnqueueTelemetryEvent))]
-        public class TelemetryPatch1
+        public class EnqueueTelemetryEvent
         {
             private static bool Prefix(string eventName, object content, [CanBeNull] string[] customTags = null) =>
                 !enabled;
         }
 
+        [PatchOnAwake]
         [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.EnqueueTelemetryEventPlayFab))]
-        public class TelemetryPatch2
+        public class EnqueueTelemetryEventPlayFab
         {
             private static bool Prefix(EventContents eventContent) =>
                 !enabled;
         }
 
+        [PatchOnAwake]
         [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.FlushPlayFabTelemetry))]
-        public class TelemetryPatch3
+        public class FlushPlayFabTelemetry
         {
             private static bool Prefix() =>
                 !enabled;
         }
 
+        [PatchOnAwake]
         [HarmonyPatch(typeof(GorillaTelemetry), nameof(GorillaTelemetry.FlushMothershipTelemetry))]
-        public class TelemetryPatch4
+        public class FlushMothershipTelemetry
         {
             private static bool Prefix() =>
                 !enabled;
         }
 
+        [PatchOnAwake]
         [HarmonyPatch(typeof(LckTelemetryClient), nameof(LckTelemetryClient.SendTelemetry))]
-        public class TelemetryPatch5
+        public class SendTelemetry
         {
             private static bool Prefix(LckTelemetryEvent lckTelemetryEvent) =>
+                !enabled;
+        }
+
+        [PatchOnAwake]
+        [HarmonyPatch(typeof(PlayFabEventsAPI), nameof(PlayFabEventsAPI.WriteTelemetryEvents))]
+        public class WriteTelemetryEvents
+        {
+            private static bool Prefix(WriteEventsRequest request, System.Action<WriteEventsResponse> resultCallback, System.Action<PlayFabError> errorCallback, object customData = null, Dictionary<string, string> extraHeaders = null) =>
                 !enabled;
         }
     }

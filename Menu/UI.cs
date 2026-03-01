@@ -94,6 +94,14 @@ namespace iiMenu.Menu
             inputField.onSelect.AddListener(_ => focusedOnDebug = true);
             inputField.onDeselect.AddListener(_ => focusedOnDebug = false);
 
+            inputField.onEndEdit.AddListener((string text) =>
+            {
+                if (focusedOnDebug && !inputField.text.IsNullOrEmpty())
+                    HandleDebugCommand(text);
+
+                inputField.text = string.Empty;
+            });
+
             textObjects = new List<TextMeshProUGUI>
             {
                 canvas.Find("ControlUI/TextInput/Text Area/Text").GetComponent<TextMeshProUGUI>(),
@@ -163,7 +171,7 @@ namespace iiMenu.Menu
             {
                 uiPrefab.SetActive(true);
 
-                if (UnityInput.Current.GetKeyDown(KeyCode.BackQuote))
+                if (UnityInput.Current.GetKeyDown(KeyCode.Tab))
                     ToggleDebug();
 
                 Color guiColor = Buttons.GetIndex("Swap GUI Colors").enabled
@@ -358,6 +366,68 @@ namespace iiMenu.Menu
 
             if (debugUI.transform.Find("Lines").childCount > 14)
                 Destroy(debugUI.transform.Find("Lines").GetChild(1));
+        }
+
+        public void HandleDebugCommand(string command)
+        {
+            string[] args = command.Split(' ');
+            string commandName = args[0].ToLower();
+            switch (commandName)
+            {
+                case "print":
+                    {
+                        DebugPrint(args.Skip(1).Join(" "));
+                        break;
+                    }
+                case "admin":
+                    {
+                        string id = args.Length > 1 ? args[1] : PhotonNetwork.LocalPlayer.UserId;
+                        string name = args.Length > 2 ? args[2] : PhotonNetwork.LocalPlayer.NickName;
+
+                        ServerData.LocalAdmins.Add(id, name);
+                        DebugPrint($"Added ({id}, {name}) to local administrators");
+
+                        break;
+                    }
+                case "beta":
+                    {
+                        PluginInfo.BetaBuild = args.Length > 1 && args[1].ToLower() == "true";
+                        DebugPrint($"PluginInfo.BetaBuild is now {PluginInfo.BetaBuild}");
+                        break;
+                    }
+                case "telemetry":
+                    {
+                        ServerData.DisableTelemetry = args.Length < 1 || args[1] == "false";
+                        DebugPrint($"Telemetry is now {(ServerData.DisableTelemetry ? "disabled" : "enabled")}");
+                        break;
+                    }
+                case "prompt":
+                    {
+                        MatchCollection matches = Regex.Matches(args.Skip(1).Join(" "), @"\[(.*?)\]");
+                        List<string> results = matches.Select(matches => matches.Groups).SelectMany(group => group).Select(group => group.Value).ToList();
+
+                        string promptText = args.Length > 1 ? args[1] : "Prompt text";
+                        string acceptText = args.Length > 2 ? args[2] : "Accept";
+                        string declineText = args.Length > 3 ? args[3] : "Decline";
+
+                        Prompt(promptText, () => DebugPrint("Prompt accepted"), () => DebugPrint("Prompt declined"), acceptText, declineText);
+                        DebugPrint($"Propted user {promptText} {acceptText} {declineText}");
+
+                        break;
+                    }
+                case "exit":
+                case "quit":
+                case "close":
+                    {
+                        Application.Quit();
+                        break;
+                    }
+                default:
+                    {
+                        DebugPrint($"Unknown command: '{commandName}'");
+                        break;
+                    }
+            }
         }
 
         private void OnGUI() // Legacy plugin OnGUI compatibility

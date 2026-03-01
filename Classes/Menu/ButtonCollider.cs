@@ -44,6 +44,7 @@ namespace iiMenu.Classes.Menu
 			{
 				if (Random.Range(1, 5) == 2)
 				{
+					NotificationManager.SendNotification("Try again loser >:3");
 					return;
 				}
 			}

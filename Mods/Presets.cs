@@ -59,7 +59,7 @@ namespace iiMenu.Mods
             
             NotificationManager.SendNotification("<color=grey>[</color><color=purple>PRESET</color><color=grey>]</color> Legitimate preset enabled successfully.");
         }
-
+      
         public static void GhostPreset()
         {
             string[] presetMods = {
